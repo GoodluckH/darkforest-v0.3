@@ -19,17 +19,20 @@ template Main(n) {
     /* Check the range constrait of the three planet */
     component checkCoord[3];
 
-    checkCoord[0] = CheckCoord(r);
+    checkCoord[0] = CheckCoord();
     checkCoord[0].x <== a[0];
     checkCoord[0].y <== a[1];
+    checkCoord[0].r <== r;
 
-    checkCoord[1] = CheckCoord(r);
+    checkCoord[1] = CheckCoord();
     checkCoord[1].x <== b[0];
     checkCoord[1].y <== b[1];
+    checkCoord[1].r <== r;
 
-    checkCoord[2] = CheckCoord(r);
+    checkCoord[2] = CheckCoord();
     checkCoord[2].x <== c[0];
     checkCoord[2].y <== c[1];
+    checkCoord[2].r <== r;
     
     /* Check the if a, b, c form a valid triangle */
     component len_ab = GetDistance(); 
@@ -94,23 +97,21 @@ template GetDistance() {
     signal input by;
     signal output len;
 
-    signal x;
-    signal y;
-    signal sqrt;
-    x <== (ax - bx) ** 2;
-    y <== (ay - by) ** 2;
-    sqrt <== sqrt(x + y);
-    len <== sqrt;
+    var x = (ax - bx) ** 2;
+    var y = (ay - by) ** 2;
+    var result = sqrt(x + y);
+    len <-- result;
     
 }
 
 
-template CheckCoord(r) {
+template CheckCoord() {    
     signal input x;
     signal input y;
+    signal input r;
     
     /* check abs(x), abs(y), abs(r) < 2^32 */
-    component rp = MultiRangeProof(2, 40, 2 ** 32);
+    component rp = MultiRangeProof(2, 60, 2 ** 32);
     rp.in[0] <== x;
     rp.in[1] <== y;
 
@@ -127,5 +128,49 @@ template CheckCoord(r) {
     comp.out === 1;
 }
 
+function sqrt(n) {
+
+    if (n == 0) {
+        return 0;
+    }
+
+    // Test that have solution
+    var res = n ** ((-1) >> 1);
+//        if (res!=1) assert(false, "SQRT does not exists");
+    if (res!=1) return 0;
+
+    var m = 28;
+    var c = 19103219067921713944291392827692070036145651957329286315305642004821462161904;
+    var t = n ** 81540058820840996586704275553141814055101440848469862132140264610111;
+    var r = n ** ((81540058820840996586704275553141814055101440848469862132140264610111+1)>>1);
+    var sq;
+    var i;
+    var b;
+    var j;
+
+    while ((r != 0)&&(t != 1)) {
+        sq = t*t;
+        i = 1;
+        while (sq!=1) {
+            i++;
+            sq = sq*sq;
+        }
+
+        // b = c ^ m-i-1
+        b = c;
+        for (j=0; j< m-i-1; j ++) b = b*b;
+
+        m = i;
+        c = b*b;
+        t = t*c;
+        r = r*b;
+    }
+
+    if (r < 0 ) {
+        r = -r;
+    }
+
+    return r;
+}
 
 component main = Main(2);

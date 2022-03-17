@@ -11,13 +11,11 @@ rm witness.json
 rm witness.bin
 echo "compiling circuit to snarkjs..." &&
 date &&
-circom circuit.circom &&
-echo "generating prover and verification keys..." &&
-date &&
-snarkjs setup --protocol groth &&
+circom circuit.circom --r1cs --wasm --sym &&
 echo "calculating witness..." &&
 date &&
-snarkjs calculatewitness &&
+cd circuit_js
+node generate_witness.js &&
 echo "generating proof..." &&
 date &&
 snarkjs proof &&
